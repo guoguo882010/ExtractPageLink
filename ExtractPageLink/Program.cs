@@ -79,10 +79,12 @@ namespace ExtractPageLink
         }
 
         public static async void Run()
-        {            
+        {
+            int i = 1;
+            int total = all.Length;
             foreach (var item in all)
             {
-                Console.WriteLine(item);
+                Console.WriteLine(item + " [" + i.ToString() + "/"+ total.ToString() + "]");
 
                 try
                 {
@@ -112,6 +114,8 @@ namespace ExtractPageLink
                 {
 
                 }
+
+                i++;
 
             }
             Console.WriteLine("finished");
