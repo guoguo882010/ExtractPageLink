@@ -18,11 +18,13 @@ namespace ExtractPageLink
 
             if (args.Length == 0)
             {
-                Console.WriteLine("输入文本文件路径");
+                Console.WriteLine("try 'guo --help' for more information ");
             }
             else
             {
-                if (args[0] == "-s")
+                string comand = args[0];
+
+                if (comand == "-s")
                 {
                     fileName = GetFileFullPath(Path.GetDirectoryName(args[1]));
 
@@ -41,10 +43,15 @@ namespace ExtractPageLink
                     });
 
 
+                } else if (comand == "-h" || comand == "-help")
+                {
+                    Console.WriteLine("帮助说明：命令行下执行");
+                    Console.WriteLine("1");
+                    Console.WriteLine("1");
                 }
 
             }
-            Console.ReadLine();
+            //Console.ReadLine();
         }
 
 
