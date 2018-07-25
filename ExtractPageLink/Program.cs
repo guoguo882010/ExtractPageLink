@@ -11,14 +11,16 @@ namespace ExtractPageLink
 {
     class Program
     {
-        private static string[] all = { };
         private static string fileName = "";
         static void Main(string[] args)
         {
 
+            string[] footprint = { };
+            string[] urlfilelst = { };
+
             if (args.Length == 0)
             {
-                Console.WriteLine("try 'guo --help' for more information ");
+                Console.WriteLine("请输入命令");
             }
             else
             {
@@ -33,25 +35,61 @@ namespace ExtractPageLink
                         FileStream fs = File.Create(fileName);
                         fs.Close();
                     }
-
+                    //Console.WriteLine(args[1]);
                     Task.Factory.StartNew(() =>
                     {
-                        all = File.ReadAllLines(args[1]);
+                        urlfilelst = File.ReadAllLines(args[1]);
                     }).ContinueWith((t) =>
                     {
-                        Run();
+                        Run(urlfilelst);
                     });
 
 
+                } else if (comand == "-v") {
+
+                    fileName = GetFileFullPath(Path.GetDirectoryName(args[2]));
+
+                    if (!File.Exists(fileName))
+                    {
+                        FileStream fs = File.Create(fileName);
+                        fs.Close();
+                    }
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        footprint = File.ReadAllLines(args[1]);
+                        urlfilelst = File.ReadAllLines(args[2]);
+                    }).ContinueWith((t) =>
+                    {
+                        Run(footprint, urlfilelst);
+                    });
+
+                } else if (comand == "-t") {
+                    Test();
                 } else if (comand == "-h" || comand == "-help")
                 {
                     Console.WriteLine("帮助说明：命令行下执行");
-                    Console.WriteLine("1");
-                    Console.WriteLine("1");
+                    Console.WriteLine("-s 网址列表文件.txt [提取页面网址]");
+                    Console.WriteLine("-v 页面特征码.txt 网址列表文件.txt [验证网址是否包含特征码]");
                 }
 
             }
-            //Console.ReadLine();
+            Console.ReadLine();
+        }
+
+        public static void Test()
+        {
+            string[] a = new string[] { "test a", "test b", "xx", "33.com" };
+            string s = "fsdfsdfdsfsdqrew sd fds";
+            foreach (var el in a)
+            {
+                if (s.ToLower().Contains(el.ToLower()))
+                {
+                    Console.WriteLine("包含");
+                    break; ;
+                }
+            }
+          
         }
 
 
@@ -66,32 +104,102 @@ namespace ExtractPageLink
             return name;
         }
 
-        public static void Run(string a)
-        {
-            try
-            {
-                foreach (var item in all)
-                {
-                    Console.WriteLine(item);
-                    HtmlWeb hw = new HtmlWeb();
-                    HtmlDocument doc = hw.Load(item);
-                }
-            }
-            catch (Exception)
-            {
-
-                
-            }
-                
-        }
-
-        public static async void Run()
+        public static void Run2(string[] footprint, string[] urlfilelst)
         {
             int i = 1;
-            int total = all.Length;
-            foreach (var item in all)
+            int total = urlfilelst.Length;
+            foreach (var item in urlfilelst)
             {
-                Console.WriteLine(item + " [" + i.ToString() + "/"+ total.ToString() + "]");
+                Console.WriteLine(item + " [开始请求：" + i.ToString() + "/" + total.ToString() + "]");
+
+                try
+                {
+                    HtmlWeb hw = new HtmlWeb();
+  
+                    HtmlDocument doc =  hw.Load(item);
+
+                    string html = doc.DocumentNode.OuterHtml;
+
+                    foreach (var el in footprint)
+                    {
+                        if (html.ToLower().Contains(el.ToLower()))
+                        {
+                            using (StreamWriter sw = File.AppendText(fileName))
+                            {
+                                sw.WriteLine(item);
+                            }
+                            break; ;
+                        }
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine(item + " [请求出错：" + e.Message + "]");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(item + " [请求出错：" + e.Message + "]");
+                }
+
+                i++;
+
+            }
+            Console.WriteLine("finished");
+            System.Environment.Exit(0);
+        }
+
+        public async static void Run(string[] footprint,string[] urlfilelst)
+        {
+            int i = 1;
+            int total = urlfilelst.Length;
+            foreach (var item in urlfilelst)
+            {
+                Console.WriteLine(item + " [开始请求：" + i.ToString() + "/" + total.ToString() + "]");
+
+                try
+                {
+                    HtmlWeb hw = new HtmlWeb();
+
+                    HtmlDocument doc = await hw.LoadFromWebAsync(item);
+
+                    string html = doc.DocumentNode.OuterHtml;
+
+                    foreach (var el in footprint)
+                    {
+                        if (html.ToLower().Contains(el.ToLower()))
+                        {
+                            using (StreamWriter sw = File.AppendText(fileName))
+                            {
+                                sw.WriteLine(item);
+                            }
+                            break; ;
+                        }
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine(item + " [请求出错："+ e.Message + "]");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(item + " [请求出错：" + e.Message + "]");
+                }
+
+                i++;
+
+            }
+            Console.WriteLine("finished");
+            System.Environment.Exit(0);
+        }
+
+
+        public static async void Run(string[] urlfilelst)
+        {
+            int i = 1;
+            int total = urlfilelst.Length;
+            foreach (var item in urlfilelst)
+            {
+                Console.WriteLine(item + " [开始请求：" + i.ToString() + "/"+ total.ToString() + "]");
 
                 try
                 {
@@ -115,11 +223,11 @@ namespace ExtractPageLink
                 }
                 catch (HttpRequestException e)
                 {
-                    Console.WriteLine(item + "请求出错");
+                    Console.WriteLine(item + " [请求出错：" + e.Message + "]");
                 }
                 catch(Exception e)
                 {
-
+                    Console.WriteLine(item + " [请求出错：" + e.Message + "]");
                 }
 
                 i++;
