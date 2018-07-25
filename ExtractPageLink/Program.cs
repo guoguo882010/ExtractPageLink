@@ -17,6 +17,7 @@ namespace ExtractPageLink
 
             string[] footprint = { };
             string[] urlfilelst = { };
+            string filepath = String.Empty;
 
             if (args.Length == 0)
             {
@@ -47,7 +48,7 @@ namespace ExtractPageLink
 
                 } else if (comand == "-v") {
 
-                    fileName = GetFileFullPath(Path.GetDirectoryName(args[2]));
+                    fileName = GetFileFullPath(Path.GetDirectoryName(args[3]));
 
                     if (!File.Exists(fileName))
                     {
@@ -58,10 +59,11 @@ namespace ExtractPageLink
                     Task.Factory.StartNew(() =>
                     {
                         footprint = File.ReadAllLines(args[1]);
-                        urlfilelst = File.ReadAllLines(args[2]);
+                        filepath = args[2];
+                        urlfilelst = File.ReadAllLines(args[3]);
                     }).ContinueWith((t) =>
                     {
-                        Run(footprint, urlfilelst);
+                        Run(footprint, filepath, urlfilelst);
                     });
 
                 } else if (comand == "-t") {
@@ -69,8 +71,8 @@ namespace ExtractPageLink
                 } else if (comand == "-h" || comand == "-help")
                 {
                     Console.WriteLine("帮助说明：命令行下执行");
-                    Console.WriteLine("-s 网址列表文件.txt [提取页面网址]");
-                    Console.WriteLine("-v 页面特征码.txt 网址列表文件.txt [验证网址是否包含特征码]");
+                    Console.WriteLine("-s 网址列表文件.txt [需要1个参数，提取页面网址]");
+                    Console.WriteLine("-v 页面特征码.txt 检测的页面地址 网址列表文件.txt [需要3个参数，验证网址是否包含特征码]");
                 }
 
             }
@@ -148,19 +150,21 @@ namespace ExtractPageLink
             System.Environment.Exit(0);
         }
 
-        public async static void Run(string[] footprint,string[] urlfilelst)
+        public async static void Run(string[] footprint, string filepath , string[] urlfilelst)
         {
             int i = 1;
             int total = urlfilelst.Length;
+            string url = String.Empty;
             foreach (var item in urlfilelst)
             {
-                Console.WriteLine(item + " [开始请求：" + i.ToString() + "/" + total.ToString() + "]");
+                url = item + "/" + filepath;
+                Console.WriteLine(url + " [开始请求：" + i.ToString() + "/" + total.ToString() + "]");
 
                 try
                 {
                     HtmlWeb hw = new HtmlWeb();
 
-                    HtmlDocument doc = await hw.LoadFromWebAsync(item);
+                    HtmlDocument doc = await hw.LoadFromWebAsync(url);
 
                     string html = doc.DocumentNode.OuterHtml;
 
@@ -170,7 +174,7 @@ namespace ExtractPageLink
                         {
                             using (StreamWriter sw = File.AppendText(fileName))
                             {
-                                sw.WriteLine(item);
+                                sw.WriteLine(url);
                             }
                             break; ;
                         }
@@ -186,6 +190,7 @@ namespace ExtractPageLink
                 }
 
                 i++;
+                url = String.Empty;
 
             }
             Console.WriteLine("finished");
